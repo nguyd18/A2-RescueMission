@@ -11,6 +11,7 @@ import org.json.JSONTokener;
 public class Explorer implements IExplorerRaid {
 
     private final Logger logger = LogManager.getLogger();
+    private Aircraft ac;
 
     @Override
     public void initialize(String s) {
@@ -21,6 +22,9 @@ public class Explorer implements IExplorerRaid {
         Integer batteryLevel = info.getInt("budget");
         logger.info("The drone is facing {}", direction);
         logger.info("Battery level is {}", batteryLevel);
+
+        logger.info("** Creating Aircraft object");
+        ac = new Drone(direction, batteryLevel);
     }
 
     @Override
