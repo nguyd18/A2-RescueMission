@@ -1,17 +1,22 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
+import org.json.JSONObject;
+
 public class Drone extends Aircraft {
+	
+	private POI[] pOI;
+	private IMap iMap;
 
 	public Drone(String heading, int fuelCap) {
 		super(heading, fuelCap);
 	}
 
-	private POI[] pOI;
-
-	private IMap iMap;
-
-	public void makeDecision() {
-
+	public JSONObject makeDecision() {
+		return null;
+	}
+	
+	public void update(JSONObject response) {
+		
 	}
 
 	protected void forward() {
@@ -24,10 +29,6 @@ public class Drone extends Aircraft {
 
 	protected void turnRight() {
 
-	}
-
-	public void getResults() {
-		
 	}
 
 	protected void radar() {

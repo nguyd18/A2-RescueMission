@@ -1,5 +1,7 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
+import org.json.JSONObject;
+
 public abstract class Aircraft {
 
 	protected int fuel;
@@ -10,14 +12,14 @@ public abstract class Aircraft {
 		this.fuel = fuelCap;
 	}
 
-	public abstract void makeDecision();
+	public abstract JSONObject makeDecision();
+	
+	public abstract void update(JSONObject response);
 
 	protected abstract void forward();
 
 	protected abstract void turnLeft();
 
 	protected abstract void turnRight();
-
-	public abstract void getResults();
 
 }
