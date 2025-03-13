@@ -5,8 +5,13 @@ public class Cell {
     private int x;
     private int y;
 
-    private String id;
-    private Biomes biome;
+    public Cell north;
+    public Cell east;
+    public Cell south;
+    public Cell west;
+
+    public String id;
+    public Biomes biome;
 
     public Cell(int x, int y, String id, String biome) {
         this.x = x;
