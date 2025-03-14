@@ -1,15 +1,18 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
+// import org.apache.logging.log4j.LogManager;
+// import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 public abstract class Aircraft {
 
 	protected int fuel;
-	protected Headings heading;
+	protected Heading heading;
 
 	public Aircraft(String heading, int fuelCap) {
-		this.heading = Headings.valueOf(heading);
+		this.heading = new Heading(heading);
 		this.fuel = fuelCap;
+
 	}
 
 	public abstract JSONObject makeDecision();
