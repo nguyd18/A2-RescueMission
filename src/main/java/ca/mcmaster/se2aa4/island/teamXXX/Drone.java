@@ -63,14 +63,14 @@ public class Drone extends Aircraft {
 
 	}
 
-	protected void forward() {
+	protected JSONObject forward() {
 		JSONObject command = new JSONObject();
 		command.put("action", "fly");
 		logger.info("Drone moving forward.");
 		return command;
 	}
 
-	protected void turnLeft() {
+	protected JSONObject turnLeft() {
 		String newDdirection = getNewDirection("LEFT");
 
 		JSONObject command = new JSONObject();
@@ -85,7 +85,7 @@ public class Drone extends Aircraft {
 		return command;
 	}
 
-	protected void turnRight() {
+	protected JSONObject turnRight() {
 		String newDirection = getNewDirection("RIGHT");
 
     	JSONObject command = new JSONObject();
@@ -93,19 +93,36 @@ public class Drone extends Aircraft {
 
     	JSONObject parameters = new JSONObject();
     	parameters.put("direction", newDirection);
-	
+
     	command.put("parameters", parameters);
-	
+
     	logger.info("Drone turning right to face " + newDirection);
     
     return command;
 	}
 
-	protected void radar() {
+	protected JSONObject radar(String direction) {
+		JSONObject command = new JSONObject();
+    	command.put("action", "echo");
 
+    	JSONObject parameters = new JSONObject();
+    	parameters.put("direction", direction);
+
+    	command.put("parameters", parameters);
+
+    	logger.info("Drone sending radar echo in direction: " + direction);
+    
+    	return command;
+		
 	}
 
-	protected void scan() {
+	protected JSONObject scan() {
+    	JSONObject command = new JSONObject();
+    	command.put("action", "scan");
+	
+    	logger.info("Drone scanning the area below.");
+	
+    	return command;
 
 	}
 
