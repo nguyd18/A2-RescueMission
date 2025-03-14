@@ -1,9 +1,9 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
 public class Cell {
-    
-    private int x;
-    private int y;
+
+    public Point<Integer> location;
+    public Point<Double> poiLocation;
 
     public Cell north;
     public Cell east;
@@ -14,8 +14,7 @@ public class Cell {
     public Biomes biome;
 
     public Cell(int x, int y, String id, String biome) {
-        this.x = x;
-        this.y = y;
+        location = new Point<>(x, y);
         this.id = id;
         this.biome = Biomes.valueOf(biome);
     }

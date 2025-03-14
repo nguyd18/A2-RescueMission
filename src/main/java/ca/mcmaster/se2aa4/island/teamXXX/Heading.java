@@ -8,7 +8,7 @@ public class Heading {
 
 		N {
 			@Override
-			public Point getNextPoint() {return new Point(0, -1);}
+			public Point<Integer> getNextPoint() {return new Point<>(0, -1);}
 
 			@Override
 			public HeadingStates next() {return HeadingStates.E;}
@@ -18,7 +18,7 @@ public class Heading {
 		},
 		E {
 			@Override
-			public Point getNextPoint() {return new Point(1, 0);}
+			public Point<Integer> getNextPoint() {return new Point<>(1, 0);}
 			
 			@Override
 			public HeadingStates next() {return HeadingStates.S;}
@@ -28,7 +28,7 @@ public class Heading {
 		},
 		S {
 			@Override
-			public Point getNextPoint() {return new Point(0, 1);}
+			public Point<Integer> getNextPoint() {return new Point<>(0, 1);}
 			
 			@Override
 			public HeadingStates next() {return HeadingStates.W;}
@@ -38,7 +38,7 @@ public class Heading {
 		},
 		W {
 			@Override
-			public Point getNextPoint() {return new Point(-1, 0);}
+			public Point<Integer> getNextPoint() {return new Point<>(-1, 0);}
 			
 			@Override
 			public HeadingStates next() {return HeadingStates.N;}
@@ -47,7 +47,7 @@ public class Heading {
 			public HeadingStates prev() {return HeadingStates.S;}
 		};
 
-		public abstract Point getNextPoint();
+		public abstract Point<Integer> getNextPoint();
 		public abstract HeadingStates next();
 		public abstract HeadingStates prev();
 
