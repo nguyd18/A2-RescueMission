@@ -1,4 +1,4 @@
-package ca.mcmaster.se2aa4.island.teamXXX;
+package ca.mcmaster.se2aa4.island.team023;
 
 // import org.apache.logging.log4j.LogManager;
 // import org.apache.logging.log4j.Logger;
@@ -19,7 +19,7 @@ public abstract class Aircraft {
 	
 	public abstract void update(JSONObject response);
 
-	protected abstract void forward();
+	protected abstract JSONObject forward();
 
 	protected abstract void turnLeft();
 

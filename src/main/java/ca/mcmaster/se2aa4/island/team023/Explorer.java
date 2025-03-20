@@ -1,4 +1,4 @@
-package ca.mcmaster.se2aa4.island.teamXXX;
+package ca.mcmaster.se2aa4.island.team023;
 
 import java.io.StringReader;
 import org.apache.logging.log4j.LogManager;
@@ -30,8 +30,8 @@ public class Explorer implements IExplorerRaid {
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
-        // ac.makeDecision();
-        decision.put("action", "stop"); // we stop the exploration immediately
+        decision = ac.makeDecision();
+        // decision.put("action", "stop"); // we stop the exploration immediately
         logger.info("** Decision: {}",decision.toString());
         return decision.toString();
     }
@@ -40,7 +40,7 @@ public class Explorer implements IExplorerRaid {
     public void acknowledgeResults(String s) {
         JSONObject response = new JSONObject(new JSONTokener(new StringReader(s)));
         logger.info("** Response received:\n"+response.toString(2));
-        // ac.update(response);
+        ac.update(response);
         Integer cost = response.getInt("cost");
         logger.info("The cost of the action was {}", cost);
         String status = response.getString("status");
