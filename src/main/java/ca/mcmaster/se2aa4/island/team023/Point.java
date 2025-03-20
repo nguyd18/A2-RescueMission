@@ -1,4 +1,4 @@
-package ca.mcmaster.se2aa4.island.teamXXX;
+package ca.mcmaster.se2aa4.island.team023;
 
 /*
  * A class for respresenting 2D integer cartesian coordinates
