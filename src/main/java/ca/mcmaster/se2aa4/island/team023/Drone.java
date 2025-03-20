@@ -7,25 +7,31 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import ca.mcmaster.se2aa4.island.team023.Heading.HeadingStates;
+
 public class Drone extends Aircraft {
 	
-	private POI[] pOI;
 	private IMap map = new Map();
 	private Point<Integer> relativePos;
 	private Logger logger = LogManager.getLogger();
 
+	private boolean firstRun;
 	private int count = 0;
-	private boolean scanFlag = true;
-	private boolean radarFlag = false;
 
 	private Queue<JSONObject> actions = new ArrayDeque<>();
 
 	public Drone(String heading, int fuelCap) {
 		super(heading, fuelCap);
 		relativePos = new Point<>(0, 0);
+		firstRun = true;
 	}
 
 	public JSONObject makeDecision() {
+		if (firstRun) {
+			// nothing here yet
+			firstRun = false;
+		}
+
 		if (count > 50) {
 			actions.clear();
 			return stop();
@@ -33,7 +39,7 @@ public class Drone extends Aircraft {
 		if (!actions.isEmpty()) return actions.remove();
 
 		actions.add(scan());
-		actions.add(radar());
+		actions.add(radar(heading.getHeadingState().next()));
 		actions.add(forward());
 
 		count++;
@@ -42,13 +48,12 @@ public class Drone extends Aircraft {
 	
 	public void update(JSONObject response) {
 		map.placeCell(relativePos.x(), relativePos.y(), response);
-		scanFlag = !scanFlag;
 	}
 
 	protected JSONObject forward() {
 		JSONObject action = new JSONObject();
 		action.put("action", "fly");
-		relativePos = new Point<>(relativePos.x() + heading.getHeadingState().getNextPoint().x(), relativePos.y() + heading.getHeadingState().getNextPoint().y());
+		relativePos = Point.addInts(relativePos, heading.getHeadingState().getNextPoint());
 		return action;
 	}
 
@@ -60,11 +65,14 @@ public class Drone extends Aircraft {
 
 	}
 
-	protected JSONObject radar() {
+	protected JSONObject radar(HeadingStates dir) {
+
+		// assert dir != heading.getHeadingState().next().next() : "Invalid echo. Drone tried to send radar backwards";
+
 		JSONObject action = new JSONObject();
 		JSONObject direction = new JSONObject();
 		action.put("action", "echo");
-		direction.put("direction", heading.getHeadingState().next().toString());
+		direction.put("direction", dir.toString());
 		action.put("parameters", direction);
 		return action;
 
