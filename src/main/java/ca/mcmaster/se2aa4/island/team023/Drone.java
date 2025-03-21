@@ -60,6 +60,8 @@ public class Drone extends Aircraft {
 	 */
 	public void update(JSONObject response) {
 		map.placeCell(relativePos.x(), relativePos.y(), response);
+		// update battery
+		updateBattery(response);
 		try {
 			if (response.getJSONObject("extras").get("found").equals("GROUND")) {
 				actions.clear();
@@ -133,6 +135,17 @@ public class Drone extends Aircraft {
 		JSONObject action = new JSONObject();
 		action.put("action", "stop");
 		return action;
+	}
+
+	protected void updateBattery(JSONObject response) {
+		// update battery
+		try {
+			int cost = response.getInt("cost");
+			fuel -= cost;
+			logger.info("Currently battery level: " + fuel);
+		} catch (JSONException e) {
+			logger.error(e.getMessage());
+		}
 	}
 
 }
