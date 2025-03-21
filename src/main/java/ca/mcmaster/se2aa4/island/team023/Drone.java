@@ -138,11 +138,10 @@ public class Drone extends Aircraft {
 	}
 
 	protected void updateBattery(JSONObject response) {
-		// update battery
 		try {
 			int cost = response.getInt("cost");
 			fuel -= cost;
-			logger.info("Currently battery level: " + fuel);
+			logger.info("Current battery level: " + fuel);
 		} catch (JSONException e) {
 			logger.error(e.getMessage());
 		}
