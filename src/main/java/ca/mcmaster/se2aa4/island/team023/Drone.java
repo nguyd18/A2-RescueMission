@@ -16,6 +16,7 @@ public class Drone extends Aircraft {
     private Logger logger = LogManager.getLogger();
     private boolean groundDetected;
     private boolean firstRun;
+    private boolean isIsland;
 
     private Queue<JSONObject> actions = new ArrayDeque<>();
 
@@ -24,14 +25,15 @@ public class Drone extends Aircraft {
         relativePos = new Point<>(0, 0);
         firstRun = true;
         groundDetected = false;
+        isIsland = false;
     }
 
     /*
      * Called every game loop, this method returns a JSONObject representing the drone's chosen action
      */
     public JSONObject makeDecision() {
+        // nothing here yet
         if (firstRun) {
-            // nothing here yet
             firstRun = false;
         }
 
@@ -39,13 +41,17 @@ public class Drone extends Aircraft {
         if (!actions.isEmpty()) return actions.remove();
 
         // actions done per cell
-        if (groundDetected){ 
+        if (groundDetected){ // if ground was detected by echo, scan below
             actions.add(scan());
-        } 
-        if (!groundDetected) {
+        } else { // if ground was not detected by echo, keep echoing until ground is detected
             actions.add(radar(heading.getHeadingState().next()));
         }
 
+        if (isIsland) { // if the drone is flying over the island, scan below, and echo forward
+            actions.add(radar(heading.getHeadingState()));
+        }
+
+        // move forward by default
         actions.add(forward());
 
         return actions.remove();
@@ -59,27 +65,28 @@ public class Drone extends Aircraft {
 		// update battery
 		updateBattery(response);
         
-        // Step 1: If the drone detects the island, turn right to face the island
         try {
-            if (!groundDetected && response.getJSONObject("extras").get("found").equals("GROUND")) {
+            // Step 1: If the drone detects the island, turn right to face the island
+            if (!groundDetected && response.getJSONObject("extras").getString("found").equals("GROUND")) {
                 groundDetected = true;
                 actions.clear();
                 actions.add(turnRight());
+                return;
+            }
+            // Step 2: If the drone is flying over the island, update state
+            if (groundDetected && !isIsland && !response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")) {
+                isIsland = true;
+            }
+            // Step 3: Check radar response to decide whether to stop
+            if (isIsland && response.has("extras") && response.getJSONObject("extras").has("found")) {
+                String terrainAhead = response.getJSONObject("extras").getString("found");
+    
+                if (!terrainAhead.equals("GROUND")) {
+                    actions.clear();
+                    actions.add(stop());
+                }
             }
         } catch (JSONException e) {
-            logger.error(e.getMessage());
-        }
-        
-        // continue to fly until the drone scans the island
-        // once the island is found, the drone will continue to fly until it reaches the edge of the island
-        // once the edge is reached (drones scans ocean), stop drone
-        boolean isIsland = false;
-        try {
-            if (!isIsland && response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")){
-                actions.clear();
-                actions.add(forward());
-            }
-        } catch (Exception e) {
             logger.error(e.getMessage());
         }
 
