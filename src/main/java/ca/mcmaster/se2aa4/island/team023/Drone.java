@@ -14,13 +14,16 @@ public class Drone extends Aircraft {
     private IMap map = new Map();
     private Point<Integer> relativePos;
     private Logger logger = LogManager.getLogger();
-
+    protected String creekID;
+    protected String siteID;
     // flags
     private boolean groundDetected;
     private boolean firstRun;
     private boolean isFlyingOverIsland;
     private boolean isFlyingDownwards;
     private boolean droneHasTurnedAround;
+    private boolean foundCreek;
+    private boolean foundEmergencySite;
 
     private Queue<JSONObject> actions = new ArrayDeque<>();
 
@@ -32,6 +35,9 @@ public class Drone extends Aircraft {
         isFlyingOverIsland = false;
         isFlyingDownwards = false;
         droneHasTurnedAround = false;
+        foundCreek = false;
+        foundEmergencySite = false;
+    
     }
 
     /*
@@ -75,12 +81,14 @@ public class Drone extends Aircraft {
 		updateBattery(response);
 
         // if the battery reaches below 2600, stop the drone
-        if (fuel < 2600) {
+        if (fuel < 1700) {
+            logger.info(creekID);
+            logger.info(siteID);
             actions.clear();
             actions.add(stop());
             return;
         }
-        
+
         try {
             // Step 1: If the drone detects the island, turn right to face the island
             if (!groundDetected && response.getJSONObject("extras").getString("found").equals("GROUND")) {
@@ -116,18 +124,33 @@ public class Drone extends Aircraft {
             }
             /* // Step 4: If the drone has turned around, echoes forward but doesn't detect ground, stop the drone
             if (droneHasTurnedAround && !response.getJSONObject("extras").getString("found").equals("GROUND")) {
+                logger.info(creekID);
+                logger.info(siteID);
                 actions.clear();
                 actions.add(stop());
             } else {
                 droneHasTurnedAround = false;
                 return;
-            }
- */
-            // Stop the drone when it scan over the creek
-            if ( !response.getJSONObject("extras").getJSONArray("creeks").get(0).equals(null)){
-                actions.clear();
+            } */
+ 
+            // Find the creek
+            if (!foundCreek && !response.getJSONObject("extras").getJSONArray("creeks").get(0).equals(null)){
+                creekID = response.getJSONObject("extras").getJSONArray("creeks").getString(0);
+                foundCreek = true;
+                logger.info(creekID);
+                /* actions.clear();
                 actions.add(stop());
+                 */
             }
+            // Find emergency site
+            if (!foundEmergencySite && !response.getJSONObject("extras").getJSONArray("sites").get(0).equals(null)){
+                siteID = response.getJSONObject("extras").getJSONArray("sites").getString(0);
+                foundEmergencySite = true;
+                logger.info(siteID);
+                /* actions.clear();
+                actions.add(stop()); */
+            }
+            
         } catch (JSONException e) {
             logger.error(e.getMessage());
         }
