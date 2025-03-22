@@ -77,13 +77,28 @@ public class Drone extends Aircraft {
             } catch (JSONException e) {
                 logger.error(e.getMessage());
             }
+<<<<<<< Updated upstream
         }
         try {
             if (!response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")){
+=======
+            /* // Step 4: If the drone has turned around, echoes forward but doesn't detect ground, stop the drone
+            if (droneHasTurnedAround && !response.getJSONObject("extras").getString("found").equals("GROUND")) {
+>>>>>>> Stashed changes
                 actions.clear();
                 actions.add(stop());
             }
+<<<<<<< Updated upstream
         } catch (Exception e) {
+=======
+ */
+            // Stop the drone when it scan over the creek
+            if ( !response.getJSONObject("extras").getJSONArray("creeks").get(0).equals(null)){
+                actions.clear();
+                actions.add(stop());
+            }
+        } catch (JSONException e) {
+>>>>>>> Stashed changes
             logger.error(e.getMessage());
         }
     }
