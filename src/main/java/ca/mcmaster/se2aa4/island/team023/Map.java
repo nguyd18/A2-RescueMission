@@ -3,7 +3,6 @@ package ca.mcmaster.se2aa4.island.team023;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Map implements IMap {
@@ -15,6 +14,7 @@ public class Map implements IMap {
 
 	private boolean isOcean;
 	private boolean fromScan;
+	private boolean radarGroundFound;
 	private int distance;
 
 	/**
@@ -43,12 +43,24 @@ public class Map implements IMap {
 		
 	}
 
-	private void parseJSON(JSONObject input) throws JSONException {
+	private void parseJSON(JSONObject input) {
 
 		isOcean = true;
 		fromScan = false;
+		radarGroundFound = false;
+		distance = 0;
 
-		JSONObject extras = input.getJSONObject("extras");
+		JSONObject extras;
+		if (input.has("extras")) extras = input.getJSONObject("extras");
+		else return;
+
+		if (extras.has("range") && extras.has("found")) {
+			fromScan = true;
+			distance = extras.getInt("range");
+
+			radarGroundFound = extras.get("found").equals("GROUND");
+			
+		}
 
 
 
