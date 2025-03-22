@@ -14,9 +14,13 @@ public class Drone extends Aircraft {
     private IMap map = new Map();
     private Point<Integer> relativePos;
     private Logger logger = LogManager.getLogger();
+
+    // flags
     private boolean groundDetected;
     private boolean firstRun;
-    private boolean isIsland;
+    private boolean isFlyingOverIsland;
+    private boolean isFlyingDownwards;
+    private boolean droneHasTurnedAround;
 
     private Queue<JSONObject> actions = new ArrayDeque<>();
 
@@ -25,7 +29,9 @@ public class Drone extends Aircraft {
         relativePos = new Point<>(0, 0);
         firstRun = true;
         groundDetected = false;
-        isIsland = false;
+        isFlyingOverIsland = false;
+        isFlyingDownwards = false;
+        droneHasTurnedAround = false;
     }
 
     /*
@@ -47,10 +53,13 @@ public class Drone extends Aircraft {
             actions.add(radar(heading.getHeadingState().next()));
         }
 
-        if (isIsland) { // if the drone is flying over the island, scan below, and echo forward
+        if (isFlyingOverIsland) { // if the drone is flying over the island, scan below, and echo forward
             actions.add(radar(heading.getHeadingState()));
         }
 
+        if (droneHasTurnedAround) { // if the drone has turned around, echo forward
+            actions.add(radar(heading.getHeadingState()));
+        }
         // move forward by default
         actions.add(forward());
 
@@ -64,6 +73,13 @@ public class Drone extends Aircraft {
         map.placeCell(relativePos.x(), relativePos.y(), response);
 		// update battery
 		updateBattery(response);
+
+        // if the battery reaches below 2600, stop the drone
+        if (fuel < 2600) {
+            actions.clear();
+            actions.add(stop());
+            return;
+        }
         
         try {
             // Step 1: If the drone detects the island, turn right to face the island
@@ -71,20 +87,40 @@ public class Drone extends Aircraft {
                 groundDetected = true;
                 actions.clear();
                 actions.add(turnRight());
+                isFlyingDownwards = true;
                 return;
             }
             // Step 2: If the drone is flying over the island, update state
-            if (groundDetected && !isIsland && !response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")) {
-                isIsland = true;
+            if (groundDetected && !isFlyingOverIsland && !response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")) {
+                isFlyingOverIsland = true;
             }
-            // Step 3: Check radar response to decide whether to stop
-            if (isIsland && response.has("extras") && response.getJSONObject("extras").has("found")) {
+            // Step 3: Check radar response to decide whether to turn
+            if (isFlyingOverIsland && response.has("extras") && response.getJSONObject("extras").has("found")) {
                 String terrainAhead = response.getJSONObject("extras").getString("found");
     
                 if (!terrainAhead.equals("GROUND")) {
                     actions.clear();
-                    actions.add(stop());
+                    if (isFlyingDownwards) {
+                        actions.add(turnLeft());
+                        actions.add(turnLeft());
+                        isFlyingDownwards = false;
+                    } else {
+                        actions.add(turnRight());
+                        actions.add(turnRight());
+                        isFlyingDownwards = true;
+                    }
+                    // actions.add(stop());
+                    droneHasTurnedAround = true;
+                    return;
                 }
+            }
+            // Step 4: If the drone has turned around, echoes forward but doesn't detect ground, stop the drone
+            if (droneHasTurnedAround && !response.getJSONObject("extras").getString("found").equals("GROUND")) {
+                actions.clear();
+                actions.add(stop());
+            } else {
+                droneHasTurnedAround = false;
+                return;
             }
         } catch (JSONException e) {
             logger.error(e.getMessage());
