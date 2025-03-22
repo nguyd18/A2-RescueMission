@@ -4,8 +4,12 @@ import org.json.JSONObject;
 
 public interface IMap {
 
-	public abstract void placeCell(int x, int y, JSONObject results);
+	public void placeCell(int x, int y, JSONObject results);
 
-	public abstract Cell getCell(int x, int y);
+	public Cell getCell(int x, int y);
+
+	public int getWidth();
+	
+	public int getHeight();
 
 }

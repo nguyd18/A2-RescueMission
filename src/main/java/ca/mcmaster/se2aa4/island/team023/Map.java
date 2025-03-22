@@ -3,6 +3,7 @@ package ca.mcmaster.se2aa4.island.team023;
 import java.util.List;
 import java.util.ArrayList;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Map implements IMap {
@@ -12,10 +13,9 @@ public class Map implements IMap {
 	private int h = 0;
 	private int w = 0;
 
-	public Map() {
-		
-	}
-
+	private boolean isOcean;
+	private boolean fromScan;
+	private int distance;
 
 	/**
 	 * @see IMap#placeCell()
@@ -38,8 +38,20 @@ public class Map implements IMap {
 			h++;
 		}
 
-		grid.get(y).set(x, new Cell(x, y, null, null));
+		parseJSON(results);
+		grid.get(y).set(x, new OceanCell(x, y, null));
 		
+	}
+
+	private void parseJSON(JSONObject input) throws JSONException {
+
+		isOcean = true;
+		fromScan = false;
+
+		JSONObject extras = input.getJSONObject("extras");
+
+
+
 	}
 
 
@@ -51,6 +63,14 @@ public class Map implements IMap {
 		// consider raising error instead
 		if (y >= h || x >= w) return null;
 		return grid.get(y).get(x);
+	}
+
+	public int getWidth() {
+		return w;
+	}
+	
+	public int getHeight() {
+		return w;
 	}
 
 }
