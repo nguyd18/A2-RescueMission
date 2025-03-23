@@ -84,7 +84,7 @@ public class Drone extends Aircraft {
             // Find the creek
             if (!foundCreek && response.getJSONObject("extras").has("creeks")){
                 var creeks = response.getJSONObject("extras").getJSONArray("creeks");
-                if (!creeks.isNull(0)){
+                if (creeks.length() > 0){
                     creekID = creeks.getString(0);
                     foundCreek = true;
                 }
@@ -92,7 +92,7 @@ public class Drone extends Aircraft {
             // Find emergency site
             if (!foundEmergencySite && response.getJSONObject("extras").has("sites")){
                 var sites = response.getJSONObject("extras").getJSONArray("sites");
-                if (sites.length() > 0 && !sites.isNull(0)) {
+                if (sites.length() > 0) {
                     siteID = sites.getString(0);
                     foundEmergencySite = true;
                 }
