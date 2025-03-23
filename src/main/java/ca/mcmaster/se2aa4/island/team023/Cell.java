@@ -4,11 +4,8 @@ public abstract class Cell {
 
     public Point<Integer> location;
 
-    public String id;
-
-    public Cell(int x, int y, String id) {
+    public Cell(int x, int y) {
         location = new Point<>(x, y);
-        this.id = id;
     }
 
     public abstract boolean isGround();

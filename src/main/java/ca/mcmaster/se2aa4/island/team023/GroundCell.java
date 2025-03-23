@@ -5,8 +5,8 @@ package ca.mcmaster.se2aa4.island.team023;
  */
 public class GroundCell extends Cell{
 
-    public GroundCell(int x, int y, String id) {
-        super(x, y, id);
+    public GroundCell(int x, int y) {
+        super(x, y);
     }
     
     @Override

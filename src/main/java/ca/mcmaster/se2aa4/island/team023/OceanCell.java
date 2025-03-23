@@ -5,8 +5,8 @@ package ca.mcmaster.se2aa4.island.team023;
  */
 public class OceanCell extends Cell {
 
-    public OceanCell(int x, int y, String id) {
-        super(x, y, id);
+    public OceanCell(int x, int y) {
+        super(x, y);
     }
     
     @Override
