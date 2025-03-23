@@ -59,7 +59,7 @@ public class Drone extends Aircraft {
             actions.add(radar(heading.getHeadingState().next()));
         }
 
-        if (isFlyingOverIsland) { // if the drone is flying over the island, scan below, and echo forward
+        if (isFlyingOverIsland) { // if the drone is flying over the island, scan below, and echo forward (run after step 2)
             actions.add(radar(heading.getHeadingState()));
         }
 
@@ -80,16 +80,24 @@ public class Drone extends Aircraft {
 		// update battery
 		updateBattery(response);
 
-        // if the battery reaches below 2600, stop the drone
-        if (fuel < 1700) {
-            logger.info(creekID);
-            logger.info(siteID);
-            actions.clear();
-            actions.add(stop());
-            return;
-        }
-
         try {
+            // Find the creek
+            if (!foundCreek && response.getJSONObject("extras").has("creeks")){
+                var creeks = response.getJSONObject("extras").getJSONArray("creeks");
+                if (!creeks.isNull(0)){
+                    creekID = creeks.getString(0);
+                    foundCreek = true;
+                }
+            }
+            // Find emergency site
+            if (!foundEmergencySite && response.getJSONObject("extras").has("sites")){
+                var sites = response.getJSONObject("extras").getJSONArray("sites");
+                if (sites.length() > 0 && !sites.isNull(0)) {
+                    siteID = sites.getString(0);
+                    foundEmergencySite = true;
+                }
+            }
+
             // Step 1: If the drone detects the island, turn right to face the island
             if (!groundDetected && response.getJSONObject("extras").getString("found").equals("GROUND")) {
                 groundDetected = true;
@@ -102,8 +110,8 @@ public class Drone extends Aircraft {
             if (groundDetected && !isFlyingOverIsland && !response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")) {
                 isFlyingOverIsland = true;
             }
-            // Step 3: Check radar response to decide whether to turn
-            if (isFlyingOverIsland && response.has("extras") && response.getJSONObject("extras").has("found")) {
+            // Step 3: Detecting the end of island and turning around
+            if (!droneHasTurnedAround && isFlyingOverIsland && response.has("extras") && response.getJSONObject("extras").has("found")) {
                 String terrainAhead = response.getJSONObject("extras").getString("found");
     
                 if (!terrainAhead.equals("GROUND")) {
@@ -122,7 +130,7 @@ public class Drone extends Aircraft {
                     return;
                 }
             }
-            /* // Step 4: If the drone has turned around, echoes forward but doesn't detect ground, stop the drone
+            // Step 4: If the drone has turned around, echoes forward but doesn't detect ground, stop the drone
             if (droneHasTurnedAround && !response.getJSONObject("extras").getString("found").equals("GROUND")) {
                 logger.info(creekID);
                 logger.info(siteID);
@@ -131,39 +139,14 @@ public class Drone extends Aircraft {
             } else {
                 droneHasTurnedAround = false;
                 return;
-            } */
+            } 
  
-            // Find the creek
-            if (!foundCreek && !response.getJSONObject("extras").getJSONArray("creeks").get(0).equals(null)){
-                creekID = response.getJSONObject("extras").getJSONArray("creeks").getString(0);
-                foundCreek = true;
-                logger.info(creekID);
-                /* actions.clear();
-                actions.add(stop());
-                 */
-            }
-            // Find emergency site
-            if (!foundEmergencySite && !response.getJSONObject("extras").getJSONArray("sites").get(0).equals(null)){
-                siteID = response.getJSONObject("extras").getJSONArray("sites").getString(0);
-                foundEmergencySite = true;
-                logger.info(siteID);
-                /* actions.clear();
-                actions.add(stop()); */
-            }
+            
             
         } catch (JSONException e) {
             logger.error(e.getMessage());
         }
 
-        // stop if not on ocean
-        // try {
-        //     if (!response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")){
-        //         actions.clear();
-        //         actions.add(stop());
-        //     }
-        // } catch (Exception e) {
-        //     logger.error(e.getMessage());
-        // }
     }
    
     // Action to fly forward
