@@ -14,13 +14,18 @@ public class Drone extends Aircraft {
     private IMap map = new Map();
     private Point<Integer> relativePos;
     private Logger logger = LogManager.getLogger();
-
+  
+    protected String creekID;
+    protected String siteID;
     // flags
     private boolean groundDetected;
     private boolean firstRun;
     private boolean isFlyingOverIsland;
     private boolean isFlyingDownwards;
     private boolean droneHasTurnedAround;
+  
+    private boolean foundCreek;
+    private boolean foundEmergencySite;
 
     private Queue<JSONObject> actions = new ArrayDeque<>();
 
@@ -32,6 +37,10 @@ public class Drone extends Aircraft {
         isFlyingOverIsland = false;
         isFlyingDownwards = false;
         droneHasTurnedAround = false;
+      
+        foundCreek = false;
+        foundEmergencySite = false;
+    
     }
 
     /*
@@ -52,7 +61,7 @@ public class Drone extends Aircraft {
         } else { // if ground was not detected by echo, keep echoing until ground is detected
             actions.add(radar(heading.getHeadingState().next()));
         }
-
+      
         if (isFlyingOverIsland) { // if the drone is flying over the island, scan below, and echo forward
             // TODO wasting battery by calling radar everytime
             // TODO we should call radar when the drone is over the ocean
@@ -75,14 +84,33 @@ public class Drone extends Aircraft {
         map.placeCell(relativePos.x(), relativePos.y(), response);
 		// update battery
 		updateBattery(response);
+      
+        if (fuel < 60) {
+            logger.info(creekID);
+            logger.info(siteID);
+            actions.clear();
+            actions.add(stop());
+            return;
+        }
 
-        // if (fuel < 2700) {
-        //     actions.clear();
-        //     actions.add(stop());
-        //     return;
-        // }
-        
         try {
+            // Find the creek
+            if (!foundCreek && response.getJSONObject("extras").has("creeks")){
+                var creeks = response.getJSONObject("extras").getJSONArray("creeks");
+                if (creeks.length() > 0){
+                    creekID = creeks.getString(0);
+                    foundCreek = true;
+                }
+            }
+            // Find emergency site
+            if (!foundEmergencySite && response.getJSONObject("extras").has("sites")){
+                var sites = response.getJSONObject("extras").getJSONArray("sites");
+                if (sites.length() > 0) {
+                    siteID = sites.getString(0);
+                    foundEmergencySite = true;
+                }
+            }
+
             // Step 1: If the drone detects the island, turn right to face the island
             if (!groundDetected && response.getJSONObject("extras").getString("found").equals("GROUND")) {
                 groundDetected = true;
@@ -91,12 +119,12 @@ public class Drone extends Aircraft {
                 isFlyingDownwards = true;
                 return;
             }
-
+          
             // Step 2: If the drone is flying over the island, update state
             if (groundDetected && !isFlyingOverIsland && !response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")) {
                 isFlyingOverIsland = true;
             }
-
+          
             // Step 3: Check radar response to decide whether to turn
             // TODO we should also send a radar to the side of the drone to see if there is ground
             // TODO continue flying until the radar doesn't detect ground anymore
@@ -114,19 +142,23 @@ public class Drone extends Aircraft {
                         actions.add(turnRight());
                         isFlyingDownwards = true;
                     }
+               
                     droneHasTurnedAround = true;
                     return;
                 }
             }
-
+          
             // Step 4: If the drone has turned around, echoes forward but doesn't detect ground, stop the drone
             if (droneHasTurnedAround && !response.getJSONObject("extras").getString("found").equals("GROUND")) {
+                logger.info(creekID);
+                logger.info(siteID);
                 actions.clear();
                 actions.add(stop());
             } else {
                 droneHasTurnedAround = false;
-                // return;
-            }
+                return;
+            } 
+ 
         } catch (JSONException e) {
             logger.error(e.getMessage());
         }
