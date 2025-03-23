@@ -79,6 +79,13 @@ public class Drone extends Aircraft {
         map.placeCell(relativePos.x(), relativePos.y(), response);
 		// update battery
 		updateBattery(response);
+        if (fuel < 60) {
+            logger.info(creekID);
+            logger.info(siteID);
+            actions.clear();
+            actions.add(stop());
+            return;
+        }
 
         try {
             // Find the creek
