@@ -54,6 +54,8 @@ public class Drone extends Aircraft {
         }
 
         if (isFlyingOverIsland) { // if the drone is flying over the island, scan below, and echo forward
+            // TODO wasting battery by calling radar everytime
+            // TODO we should call radar when the drone is over the ocean
             actions.add(radar(heading.getHeadingState()));
         }
 
@@ -74,12 +76,11 @@ public class Drone extends Aircraft {
 		// update battery
 		updateBattery(response);
 
-        // if the battery reaches below 2600, stop the drone
-        if (fuel < 2600) {
-            actions.clear();
-            actions.add(stop());
-            return;
-        }
+        // if (fuel < 2700) {
+        //     actions.clear();
+        //     actions.add(stop());
+        //     return;
+        // }
         
         try {
             // Step 1: If the drone detects the island, turn right to face the island
@@ -90,12 +91,16 @@ public class Drone extends Aircraft {
                 isFlyingDownwards = true;
                 return;
             }
+
             // Step 2: If the drone is flying over the island, update state
             if (groundDetected && !isFlyingOverIsland && !response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")) {
                 isFlyingOverIsland = true;
             }
+
             // Step 3: Check radar response to decide whether to turn
-            if (isFlyingOverIsland && response.has("extras") && response.getJSONObject("extras").has("found")) {
+            // TODO we should also send a radar to the side of the drone to see if there is ground
+            // TODO continue flying until the radar doesn't detect ground anymore
+            if (isFlyingOverIsland && response.has("extras") && response.getJSONObject("extras").has("found") && !droneHasTurnedAround) {
                 String terrainAhead = response.getJSONObject("extras").getString("found");
     
                 if (!terrainAhead.equals("GROUND")) {
@@ -109,18 +114,18 @@ public class Drone extends Aircraft {
                         actions.add(turnRight());
                         isFlyingDownwards = true;
                     }
-                    // actions.add(stop());
                     droneHasTurnedAround = true;
                     return;
                 }
             }
+
             // Step 4: If the drone has turned around, echoes forward but doesn't detect ground, stop the drone
             if (droneHasTurnedAround && !response.getJSONObject("extras").getString("found").equals("GROUND")) {
                 actions.clear();
                 actions.add(stop());
             } else {
                 droneHasTurnedAround = false;
-                return;
+                // return;
             }
         } catch (JSONException e) {
             logger.error(e.getMessage());
