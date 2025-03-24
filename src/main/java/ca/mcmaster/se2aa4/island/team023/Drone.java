@@ -163,15 +163,6 @@ public class Drone extends Aircraft {
             logger.error(e.getMessage());
         }
 
-        // stop if not on ocean
-        // try {
-        //     if (!response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")){
-        //         actions.clear();
-        //         actions.add(stop());
-        //     }
-        // } catch (Exception e) {
-        //     logger.error(e.getMessage());
-        // }
     }
    
     // Action to fly forward
