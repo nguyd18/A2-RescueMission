@@ -27,7 +27,7 @@ public class Drone extends Aircraft {
     private boolean foundCreek;
     private boolean foundEmergencySite;
 
-    private Queue<JSONObject> actions = new ArrayDeque<>();
+    private DroneActions actions;
 
     public Drone(String heading, int fuelCap) {
         super(heading, fuelCap);
@@ -40,6 +40,8 @@ public class Drone extends Aircraft {
       
         foundCreek = false;
         foundEmergencySite = false;
+
+        actions = new DroneActions(this);
     
     }
 
@@ -81,7 +83,7 @@ public class Drone extends Aircraft {
      * Called after every action, this method updates values in response to the return JSONObject
      */
     public void update(JSONObject response) {
-        map.placeCell(relativePos.x(), relativePos.y(), response);
+        map.placeCell(relativePos.x(), relativePos.y(), heading.getHeadingState().getNextPoint().x(), heading.getHeadingState().getNextPoint().y(), response);
 		// update battery
 		updateBattery(response);
       
@@ -173,68 +175,18 @@ public class Drone extends Aircraft {
         //     logger.error(e.getMessage());
         // }
     }
-   
-    // Action to fly forward
-    protected JSONObject forward() {
-        JSONObject action = new JSONObject();
-        action.put("action", "fly");
-        relativePos = Point.addInts(relativePos, heading.getHeadingState().getNextPoint());
-        return action;
+
+    public Heading getHeading() {
+        return heading;
     }
 
-    protected JSONObject turnLeft() {
-        // TODO encapsulate this
-        relativePos = Point.addInts(relativePos, heading.getHeadingState().getNextPoint());
-        heading.turnCounterClockwise();
-        relativePos = Point.addInts(relativePos, heading.getHeadingState().getNextPoint());
-
-        JSONObject action = new JSONObject();
-        JSONObject direction = new JSONObject();
-        action.put("action", "heading");
-        direction.put("direction", heading.getHeadingState().toString());
-        action.put("parameters", direction);
-
-        return action;
+    // Point is immutable, so there is no concern of it being modified
+    public Point<Integer> getRelativePos() {
+        return relativePos;
     }
 
-    protected JSONObject turnRight() {
-
-        // TODO encapsulate this
-        relativePos = Point.addInts(relativePos, heading.getHeadingState().getNextPoint());
-        heading.turnClockwise();
-        relativePos = Point.addInts(relativePos, heading.getHeadingState().getNextPoint());
-
-        JSONObject action = new JSONObject();
-        JSONObject direction = new JSONObject();
-        action.put("action", "heading");
-        direction.put("direction", heading.getHeadingState().toString());
-        action.put("parameters", direction);
-
-        return action;
-    }
-
-    protected JSONObject radar(HeadingStates dir) {
-
-        // assert dir != heading.getHeadingState().next().next() : "Invalid echo. Drone tried to send radar backwards";
-
-        JSONObject action = new JSONObject();
-        JSONObject direction = new JSONObject();
-        action.put("action", "echo");
-        direction.put("direction", dir.toString());
-        action.put("parameters", direction);
-        return action;
-    }
-
-    protected JSONObject scan() {
-        JSONObject action = new JSONObject();
-        action.put("action", "scan");
-        return action;
-    }
-
-    protected JSONObject stop() {
-        JSONObject action = new JSONObject();
-        action.put("action", "stop");
-        return action;
+    public void setRelativePos(Point<Integer> p) {
+        relativePos = p;
     }
 
 	protected void updateBattery(JSONObject response) {
