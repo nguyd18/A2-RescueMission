@@ -1,14 +1,9 @@
 package ca.mcmaster.se2aa4.island.team023;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import ca.mcmaster.se2aa4.island.team023.Heading.HeadingStates;
 
 public class Drone extends Aircraft {
     private IMap map = new Map();
@@ -19,7 +14,6 @@ public class Drone extends Aircraft {
     protected String siteID;
     // flags
     private boolean groundDetected;
-    private boolean firstRun;
     private boolean isFlyingOverIsland;
     private boolean isFlyingDownwards;
     private boolean droneHasTurnedAround;
@@ -34,7 +28,6 @@ public class Drone extends Aircraft {
     public Drone(String heading, int fuelCap) {
         super(heading, fuelCap);
         relativePos = new Point<>(0, 0);
-        firstRun = true;
         groundDetected = false;
         isFlyingOverIsland = false;
         isFlyingDownwards = false;
@@ -46,6 +39,8 @@ public class Drone extends Aircraft {
         foundEmergencySite = false;
 
         actions = new DroneActions(this);
+        actions.setDefaultEcho(false, false, true);
+        actions.setDefaultMovement(false, true, false);
     
     }
 
@@ -54,49 +49,20 @@ public class Drone extends Aircraft {
      */
     public JSONObject makeDecision() {
         logger.info("**** Making a decision...");
-        // nothing here yet
-        if (firstRun) {
-            firstRun = false;
-        }
-
-        // if action remaining in queue execute
-        if (!actions.isEmpty()) return actions.remove();
-
-        // actions done per cell
-        if (groundDetected){ // if ground was detected by echo, scan below
-            logger.info("**** Ground detected. Scanning below");
-            actions.add(scan());
-        } else if (!groundDetected && firstphase){ // if ground was not detected by echo, keep echoing until ground is detected
-            logger.info("**** Ground not detected. Echo to find the island");
-            actions.add(radar(heading.getHeadingState().next()));
-        } else {
-            // this is the starting of the second phase
-            if (isFlyingDownwards) {
-                logger.info("**** Facing " + heading.getHeadingState() + ". Echoing " + heading.getHeadingState().next());
-                actions.add(radar(heading.getHeadingState().next()));
-            } else {
-                logger.info("**** Facing " + heading.getHeadingState() + ". Echoing " + heading.getHeadingState().prev());
-                actions.add(radar(heading.getHeadingState().prev()));
-            }
-        }
       
-        if (isFlyingOverIsland) { // if the drone is flying over the island, scan below, and echo forward
-            // TODO wasting battery by calling radar everytime
-            // TODO we should call radar when the drone is over the ocean
-            logger.info("**** Flying over island. Echoing forward");
-            actions.add(radar(heading.getHeadingState()));
-        }
+        // if (isFlyingOverIsland) { // if the drone is flying over the island, scan below, and echo forward
+        //     // TODO wasting battery by calling radar everytime
+        //     // TODO we should call radar when the drone is over the ocean
+        //     logger.info("**** Flying over island. Echoing forward");
+        //     actions.add(radar(heading.getHeadingState()));
+        // }
 
-        if (droneHasTurnedAround) { // if the drone has turned around, echo forward
-            logger.info("**** Drone has made a 180. Echoing forward");
-            actions.add(radar(heading.getHeadingState()));
-        }
+        // if (droneHasTurnedAround) { // if the drone has turned around, echo forward
+        //     logger.info("**** Drone has made a 180. Echoing forward");
+        //     actions.add(radar(heading.getHeadingState()));
+        // }
 
-        // move forward by default
-        logger.info("**** Flying forward");
-        actions.add(forward());
-
-        return actions.remove();
+        return actions.nextAction();
     }
    
     /*
@@ -110,8 +76,7 @@ public class Drone extends Aircraft {
         if (fuel < 60) {
             logger.info(creekID);
             logger.info(siteID);
-            actions.clear();
-            actions.add(stop());
+            actions.queueStop();
             return;
         }
 
@@ -140,8 +105,9 @@ public class Drone extends Aircraft {
                     if (response.getJSONObject("extras").getString("found").equals("GROUND")) {
                         logger.info("**** Ground detected for the first time. Turning right to face the island");
                         groundDetected = true;
-                        actions.clear();
-                        actions.add(turnRight());
+                        actions.addRightTurn();
+                        actions.setDefaultEcho(false, false, false);
+                        actions.setDefaultScan(true);
                         isFlyingDownwards = true;
                         return;
                     }
@@ -152,6 +118,7 @@ public class Drone extends Aircraft {
                     if (!response.getJSONObject("extras").getJSONArray("biomes").get(0).equals("OCEAN")) {
                         logger.info("**** Drone is now flying over the island");
                         isFlyingOverIsland = true;
+                        actions.setDefaultEcho(false, true, false);
                     }
                 }
             
@@ -163,14 +130,11 @@ public class Drone extends Aircraft {
         
                     if (!terrainAhead.equals("GROUND")) {
                         logger.info("**** No ground detected ahead. Performing U-turn");
-                        actions.clear();
                         if (isFlyingDownwards) {
-                            actions.add(turnLeft());
-                            actions.add(turnLeft());
+                            actions.addDoubleLeft();
                             isFlyingDownwards = false;
                         } else {
-                            actions.add(turnRight());
-                            actions.add(turnRight());
+                            actions.addDoubleRight();
                             isFlyingDownwards = true;
                         }
                 
@@ -185,7 +149,7 @@ public class Drone extends Aircraft {
                         logger.info("**** No ground detected after U-turn");
                         logger.info(creekID);
                         logger.info(siteID);
-                        actions.clear();
+                        actions.clearQueue();
                         groundDetected = false;
                         isFlyingOverIsland = false;
                         firstphase = false;
@@ -204,16 +168,13 @@ public class Drone extends Aircraft {
                 if (startOfSecondPhase && response.getJSONObject("extras").has("found")) {
                     if (!response.getJSONObject("extras").getString("found").equals("GROUND")) {
                         logger.info("**** Moved out of the 1st phase");
-                        actions.clear();
                         if (isFlyingDownwards) {
-                            actions.add(turnRight());
-                            actions.add(forward());
-                            actions.add(turnRight());
+                            actions.addLongDoubleRight();
+                            actions.setDefaultEcho(false, false, true);
                             isFlyingDownwards = false;
                         } else {
-                            actions.add(turnLeft());
-                            actions.add(forward());
-                            actions.add(turnLeft());
+                            actions.addLongDoubleLeft();
+                            actions.setDefaultEcho(true, false, false);
                             isFlyingDownwards = true;
                         }
                         groundDetected = true;
@@ -229,17 +190,15 @@ public class Drone extends Aircraft {
         
                     if (!terrainAhead.equals("GROUND")) {
                         logger.info("**** No ground detected ahead. Performing U-turn");
-                        actions.clear();
                         if (isFlyingDownwards) {
-                            actions.add(turnRight());
-                            actions.add(turnRight());
+                            actions.addDoubleRight();
                             isFlyingDownwards = false;
                         } else {
-                            actions.add(turnLeft());
-                            actions.add(turnLeft());
+                            actions.addDoubleLeft();
                             isFlyingDownwards = true;
                         }
-                
+
+                        actions.setDefaultEcho(false, true, false);
                         droneHasTurnedAround = true;
                         return;
                     }
@@ -251,8 +210,7 @@ public class Drone extends Aircraft {
                         logger.info("**** No ground detected after U-turn");
                         logger.info(creekID);
                         logger.info(siteID);
-                        actions.clear();
-                        actions.add(stop());
+                        actions.queueStop();
                         return;
                     } else {
                         droneHasTurnedAround = false;
