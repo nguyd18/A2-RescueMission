@@ -17,10 +17,6 @@ public abstract class Aircraft {
 	
 	public abstract void update(JSONObject response);
 
-	protected abstract JSONObject forward();
-
-	protected abstract JSONObject turnLeft();
-
-	protected abstract JSONObject turnRight();
+	public abstract String getClosestCreekId();
 
 }

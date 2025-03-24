@@ -1,22 +1,26 @@
 package ca.mcmaster.se2aa4.island.team023;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-public class Cell {
+public abstract class Cell {
 
     public Point<Integer> location;
 
-    public String id;
-    public Biomes biome;
+    protected List<String> creeks = new ArrayList<>();
+    protected List<String> sites = new ArrayList<>();
 
-    List<String> creeks = new ArrayList<>();
-    List<String> sites = new ArrayList<>();
-
-    public Cell(int x, int y, String id, String biome) {
+    public Cell(int x, int y) {
         location = new Point<>(x, y);
-        this.id = id;
-        // this.biome = Biomes.valueOf(biome);
     }
 
+    public abstract boolean isGround();
+
+    public List<String> getCreeks() {
+        return creeks;
+    }
+
+    public List<String> getSites() {
+        return sites;
+    }
 }
