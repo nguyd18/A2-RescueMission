@@ -1,6 +1,7 @@
 package ca.mcmaster.se2aa4.island.team023;
 
 import org.json.JSONObject;
+import java.util.Stack;
 
 import java.lang.NullPointerException;
 
@@ -30,7 +31,7 @@ public class DroneActions {
     }
 
     public JSONObject nextAction(){
-        drone.setRelativePos(nextPosition.remove());
+        if (!nextPosition.isEmpty()) drone.setRelativePos(nextPosition.remove());
         if (!actionQueue.isEmpty()) return actionQueue.remove();
 
         // queue up actions based on flags. Always done in order: echo -> scan -> turns -> forward
@@ -82,36 +83,36 @@ public class DroneActions {
     }
 
     public void addLeftTurn() {
-        clearQueue();
+        // clearQueue();
         actionQueue.add(turnLeft());
     }
 
     public void addRightTurn() {
-        clearQueue();
+        // clearQueue();
         actionQueue.add(turnRight());
     }
 
     public void addDoubleLeft() {
-        clearQueue();
+        // clearQueue();
         actionQueue.add(turnLeft());
         actionQueue.add(turnLeft());
     }
     
     public void addDoubleRight() {
-        clearQueue();
+        // clearQueue();
         actionQueue.add(turnRight());
         actionQueue.add(turnRight());
     }
     
     public void addLongDoubleLeft() {
-        clearQueue();
+        // clearQueue();
         actionQueue.add(turnLeft());
         actionQueue.add(forward());
         actionQueue.add(turnLeft());
     }
     
     public void addLongDoubleRight() {
-        clearQueue();
+        // clearQueue();
         actionQueue.add(turnRight());
         actionQueue.add(forward());
         actionQueue.add(turnRight());
@@ -125,7 +126,7 @@ public class DroneActions {
         if (nextPosition.isEmpty()) {
             nextPosition.add(Point.addInts(drone.getRelativePos(), drone.getHeading().getHeadingState().getNextPoint()));
         } else {
-            nextPosition.add(Point.addInts(nextPosition.peek(), drone.getHeading().getHeadingState().getNextPoint()));
+            nextPosition.add(Point.addInts(getLastQueueItem(nextPosition), drone.getHeading().getHeadingState().getNextPoint()));
         }
         return action;
     }
@@ -136,10 +137,10 @@ public class DroneActions {
         if (nextPosition.isEmpty()) {
             nextPosition.add(Point.addInts(drone.getRelativePos(), drone.getHeading().getHeadingState().getNextPoint()));
         } else {
-            nextPosition.add(Point.addInts(nextPosition.peek(), drone.getHeading().getHeadingState().getNextPoint()));
+            nextPosition.add(Point.addInts(getLastQueueItem(nextPosition), drone.getHeading().getHeadingState().getNextPoint()));
         }
         drone.getHeading().turnCounterClockwise();
-        nextPosition.add(Point.addInts(nextPosition.remove(), drone.getHeading().getHeadingState().getNextPoint()));
+        nextPosition.add(Point.addInts(removeLastQueueItem(nextPosition), drone.getHeading().getHeadingState().getNextPoint()));
 
         JSONObject action = new JSONObject();
         JSONObject direction = new JSONObject();
@@ -156,10 +157,10 @@ public class DroneActions {
         if (nextPosition.isEmpty()) {
             nextPosition.add(Point.addInts(drone.getRelativePos(), drone.getHeading().getHeadingState().getNextPoint()));
         } else {
-            nextPosition.add(Point.addInts(nextPosition.peek(), drone.getHeading().getHeadingState().getNextPoint()));
+            nextPosition.add(Point.addInts(getLastQueueItem(nextPosition), drone.getHeading().getHeadingState().getNextPoint()));
         }
         drone.getHeading().turnClockwise();
-        nextPosition.add(Point.addInts(nextPosition.remove(), drone.getHeading().getHeadingState().getNextPoint()));
+        nextPosition.add(Point.addInts(removeLastQueueItem(nextPosition), drone.getHeading().getHeadingState().getNextPoint()));
 
         JSONObject action = new JSONObject();
         JSONObject direction = new JSONObject();
@@ -176,7 +177,7 @@ public class DroneActions {
         if (nextPosition.isEmpty()) {
             nextPosition.add(drone.getRelativePos());
         } else {
-            nextPosition.add(nextPosition.peek());
+            nextPosition.add(getLastQueueItem(nextPosition));
         }
 
         JSONObject action = new JSONObject();
@@ -193,7 +194,7 @@ public class DroneActions {
         if (nextPosition.isEmpty()) {
             nextPosition.add(drone.getRelativePos());
         } else {
-            nextPosition.add(nextPosition.peek());
+            nextPosition.add(getLastQueueItem(nextPosition));
         }
 
         JSONObject action = new JSONObject();
@@ -207,11 +208,43 @@ public class DroneActions {
         if (nextPosition.isEmpty()) {
             nextPosition.add(drone.getRelativePos());
         } else {
-            nextPosition.add(nextPosition.peek());
+            nextPosition.add(getLastQueueItem(nextPosition));
         }
 
         JSONObject action = new JSONObject();
         action.put("action", "stop");
         return action;
+    }
+
+    private Point<Integer> getLastQueueItem(Queue<Point<Integer>> q) {
+        Stack<Point<Integer>> s = new Stack<>();
+        while (!q.isEmpty()) {
+            s.push(q.remove());
+        }
+        Point<Integer> p;
+
+        p = s.peek();
+
+        while (!s.isEmpty()) {
+            q.add(s.pop());
+        }
+
+        return p;
+    }
+    
+    private Point<Integer> removeLastQueueItem(Queue<Point<Integer>> q) {
+        Stack<Point<Integer>> s = new Stack<>();
+        while (!q.isEmpty()) {
+            s.push(q.remove());
+        }
+        Point<Integer> p;
+
+        p = s.pop();
+
+        while (!s.isEmpty()) {
+            q.add(s.pop());
+        }
+
+        return p;
     }
 }

@@ -14,7 +14,7 @@ public class Map implements IMap {
 	private int w = 0;
 
 	private boolean isOcean;
-	private boolean fromScan;
+	private boolean fromEcho;
 	private boolean radarGroundFound;
 	private int distance = 0;
 
@@ -27,26 +27,26 @@ public class Map implements IMap {
 	public void placeCell(int x, int y, int nextX, int nextY, JSONObject results) {
 		
 		// no need to place cell if no scan or echo used
-		if (!results.has("extras")) return;
+		if (results.getJSONObject("extras").isEmpty()) return;
 
 		parseJSON(results);
-		if (fromScan) {
+		if (fromEcho) {
 
 			expandMap(x + distance * nextX, y + distance * nextY);
 
 			// loop through all points from (x, y) to the end of the radar ping and mark as ocean
 			int i = 1;
-			while (x + i < x + distance * nextX - 1 || y + i < y + distance * nextY - 1) {
-				grid.get(y).set(x, new OceanCell(x + i, y + i));
+			while (i < Math.abs(distance * nextX) || i < Math.abs(distance * nextY)) {
+				grid.get(y + i*nextY).set(x + i*nextX, new OceanCell(x + i*nextX, y + i*nextY));
 				i++;
 			}
 
 			// if the pinged point is ground, mark it, otherwise ignore OOB
-			if (radarGroundFound) grid.get(y).set(x, new GroundCell(x + i, y + i));
+			if (radarGroundFound) grid.get(y + i*nextY).set(x + i*nextX, new GroundCell(x + i*nextX, y + i*nextY));
 			
 		} else {
 			expandMap(x, y);
-			if (isOcean) grid.get(y).set(x, new OceanCell(x, y));
+			if (isOcean && grid.get(y).get(x) == null) grid.get(y).set(x, new OceanCell(x, y));
 			else grid.get(y).set(x, new DetailedGroundCell(x, y, creeks, sites));
 		}
 		
@@ -74,17 +74,16 @@ public class Map implements IMap {
 	private void parseJSON(JSONObject input) {
 
 		isOcean = true;
-		fromScan = false;
+		fromEcho = false;
 		radarGroundFound = false;
 		distance = 0;
 
 		JSONObject extras;
-		if (input.has("extras")) extras = input.getJSONObject("extras");
-		else return;
+		extras = input.getJSONObject("extras");
 
 		// echo response case
 		if (extras.has("range") && extras.has("found")) {
-			fromScan = true;
+			fromEcho = true;
 			distance = extras.getInt("range");
 
 			radarGroundFound = extras.get("found").equals("GROUND");
@@ -135,7 +134,98 @@ public class Map implements IMap {
 	}
 	
 	public int getHeight() {
-		return w;
+		return h;
+	}
+
+	/**
+	 * Returns the y value of the ground cell found first in the column
+	 * Note that highest in this case means northernmost; it is actually the lowest y-value of the column
+	 * Returns -1 if no ground cell found
+	 * 
+	 * @param x the column to search
+	 * @return the y value of the highest ground cell in column x
+	 */
+	public int highestGroundCellOfColumn(int x) {
+		if (x >= w) return -1;
+
+		for (int i=0;i < h;i++) {
+			if (grid.get(i).get(x) != null && grid.get(i).get(x).isGround()) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Returns the y value of the ground cell found last in the column
+	 * Note that lowest in this case means southernmost; it is actually the greatest y-value of the column
+	 * Returns -1 if no ground cell found
+	 * 
+	 * @param x the column to search
+	 * @return the y value of the lowest ground cell in column x
+	 */
+	public int lowestGroundCellOfColumn(int x) {
+		if (x >= w) return -1;
+
+		for (int i=h - 1;i >= 0;i--) {
+			if (grid.get(i).get(x) != null && grid.get(i).get(x).isGround()) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 
+	 * @return the lowest x-value of a ground cell in the map. returns -1 if no ground cells
+	 */
+	public int getLeftEdge() {
+		for (int x=0;x < w;x++) {
+			for (int y=0;y < h;y++) {
+				if (grid.get(y).get(x) != null && grid.get(y).get(x).isGround()) {
+					return x;
+				}
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 
+	 * @return the greatest x-value of a ground cell in the map. returns -1 if no ground cells
+	 */
+	public int getRightEdge() {
+		for (int x=w-1;x >= 0;x--) {
+			for (int y=0;y < h;y++) {
+				if (grid.get(y).get(x) != null && grid.get(y).get(x).isGround()) {
+					return x;
+				}
+			}
+		}
+		return -1;
+	}
+
+	public String getString() {
+		String s = "\n";
+		for (int y=0;y < h;y++) {
+			String row = "";
+			for (int x=0;x < w;x++) {
+				Cell c = grid.get(y).get(x);
+				if (c == null) {
+					row += "null    ";
+				} else if (c instanceof OceanCell) {
+					row += "Ocean   ";
+				} else if (c instanceof DetailedGroundCell) {
+					row += "DGround ";
+				} else {
+					row += "Ground  ";
+				}
+			}
+			s += row + "\n";
+		}
+		s += "width: " + w + "\n";
+		s += "height: " + h + "\n";
+		return s;
 	}
 
 }
