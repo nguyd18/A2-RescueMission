@@ -17,4 +17,6 @@ public abstract class Aircraft {
 	
 	public abstract void update(JSONObject response);
 
+	public abstract String getClosestCreekId();
+
 }

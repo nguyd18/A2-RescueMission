@@ -70,7 +70,7 @@ public class Drone extends Aircraft {
         if (fuel < 50) {
             logger.info(creekID);
             logger.info(siteID);
-            logger.info(map.getString());
+            logger.info("The closest creek ID is: {}", map.getClosestCreek());
             actions.queueStop();
             return;
         }
@@ -255,9 +255,9 @@ public class Drone extends Aircraft {
                     }
                 }
 
-                // Step 3: If the drone has passed the left edge of the island, end
+                // Step 3: If the drone has passed the left edge of the island or is on left edge and about to leave bounds, end
                 if (relativePos.x() < map.getLeftEdge()) {
-                    logger.info(map.getString());
+                    logger.info("The closest creek ID is: {}", map.getClosestCreek());
                     actions.queueStop();
                     return;
                 } else {
@@ -268,6 +268,10 @@ public class Drone extends Aircraft {
         } catch (JSONException e) {
             logger.error(e.getMessage());
         }
+    }
+    
+	public String getClosestCreekId() {
+        return map.getClosestCreek();
     }
 
     public Heading getHeading() {

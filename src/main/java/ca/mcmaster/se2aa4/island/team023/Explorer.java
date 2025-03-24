@@ -51,7 +51,9 @@ public class Explorer implements IExplorerRaid {
 
     @Override
     public String deliverFinalReport() {
-        return "no creek found";
+        String creekId = ac.getClosestCreekId();
+        logger.info("The closest creek ID is: {}", creekId);
+        return creekId;
     }
 
 }

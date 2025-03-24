@@ -18,6 +18,8 @@ public class Map implements IMap {
 	private boolean radarGroundFound;
 	private int distance = 0;
 
+	private List<Point<Integer>> pois = new ArrayList<>();
+
 	private String[] creeks;
 	private String[] sites;
 
@@ -47,7 +49,10 @@ public class Map implements IMap {
 		} else {
 			expandMap(x, y);
 			if (isOcean && grid.get(y).get(x) == null) grid.get(y).set(x, new OceanCell(x, y));
-			else grid.get(y).set(x, new DetailedGroundCell(x, y, creeks, sites));
+			else {
+				if (creeks.length > 0 || sites.length > 0) pois.add(new Point<Integer>(x, y));
+				grid.get(y).set(x, new DetailedGroundCell(x, y, creeks, sites));
+			}
 		}
 		
 		
@@ -205,27 +210,34 @@ public class Map implements IMap {
 		return -1;
 	}
 
-	public String getString() {
-		String s = "\n";
-		for (int y=0;y < h;y++) {
-			String row = "";
-			for (int x=0;x < w;x++) {
-				Cell c = grid.get(y).get(x);
-				if (c == null) {
-					row += "null    ";
-				} else if (c instanceof OceanCell) {
-					row += "Ocean   ";
-				} else if (c instanceof DetailedGroundCell) {
-					row += "DGround ";
-				} else {
-					row += "Ground  ";
-				}
+	public String getClosestCreek() {
+		String id = null;
+		boolean siteFound = false;
+		Point<Integer> siteLocation = null;
+
+		for (Point<Integer> p : pois) {
+			if (grid.get(p.y()).get(p.x()).getSites() != null && grid.get(p.y()).get(p.x()).getSites().size() > 0) {
+				siteFound = true;
+				siteLocation = p;
+				break;
 			}
-			s += row + "\n";
 		}
-		s += "width: " + w + "\n";
-		s += "height: " + h + "\n";
-		return s;
+
+		// approximate to map centre if not found
+		if (!siteFound) {
+			siteLocation = new Point<Integer>(Math.round(getRightEdge() - getLeftEdge() / 2), Math.round(h/2));
+		}
+
+		double minDist = w*h;  // intialize to max possible distance
+		for (Point<Integer> p : pois) {
+			if (!p.equals(siteLocation) && Point.distBetweenPoints(p, siteLocation) < minDist) {
+				minDist = Point.distBetweenPoints(p, siteLocation);
+				if (grid.get(p.y()).get(p.x()).getCreeks().size() > 0) id = grid.get(p.y()).get(p.x()).getCreeks().get(0);
+				
+			}
+		}
+
+		return id;
 	}
 
 }
