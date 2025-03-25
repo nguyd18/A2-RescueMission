@@ -9,9 +9,6 @@ public class Drone extends Aircraft {
     private IMap map = new Map();
     private Point<Integer> relativePos;
     private Logger logger = LogManager.getLogger();
-  
-    protected String creekID;
-    protected String siteID;
 
     // flags
     private boolean groundDetected;
@@ -22,9 +19,6 @@ public class Drone extends Aircraft {
     private boolean droneHasTurnedAround;
     private boolean firstphase;
     private boolean startOfSecondPhase;
-  
-    private boolean foundCreek;
-    private boolean foundEmergencySite;
 
     private DroneActions actions;
 
@@ -39,9 +33,6 @@ public class Drone extends Aircraft {
         droneHasTurnedAround = false;
         firstphase = true;
         startOfSecondPhase = false;
-      
-        foundCreek = false;
-        foundEmergencySite = false;
 
         actions = new DroneActions(this);
         actions.setDefaultEcho(false, false, true);
@@ -62,36 +53,17 @@ public class Drone extends Aircraft {
      * Called after every action, this method updates values in response to the return JSONObject
      */
     public void update(JSONObject response) {
+        // places a cell in the map for the drone's current position 
         map.placeCell(relativePos.x(), relativePos.y(), heading.getHeadingState().next().getNextPoint().x(), heading.getHeadingState().next().getNextPoint().y(), response);
-        logger.info("****** drone x: {}", relativePos.x());
 		// update battery
 		updateBattery(response);
       
         if (fuel < 50) {
-            logger.info(creekID);
-            logger.info(siteID);
-            logger.info("The closest creek ID is: {}", map.getClosestCreek());
             actions.queueStop();
             return;
         }
 
         try {
-            // Find the creek
-            if (!foundCreek && response.getJSONObject("extras").has("creeks")){
-                var creeks = response.getJSONObject("extras").getJSONArray("creeks");
-                if (creeks.length() > 0){
-                    creekID = creeks.getString(0);
-                    foundCreek = true;
-                }
-            }
-            // Find emergency site
-            if (!foundEmergencySite && response.getJSONObject("extras").has("sites")){
-                var sites = response.getJSONObject("extras").getJSONArray("sites");
-                if (sites.length() > 0) {
-                    siteID = sites.getString(0);
-                    foundEmergencySite = true;
-                }
-            }
 
             // First phase of the algorithm
             if (firstphase) {
@@ -119,8 +91,6 @@ public class Drone extends Aircraft {
 
                 // Step 3: fly to bottom of map and turn right
                 if (groundNoLongerDetected && !isInBottomPass) {
-                    logger.info("**** drone y: {}", relativePos.y());
-                    logger.info("**** bottom y: {}", map.getHeight());
                     if (relativePos.y() == map.getHeight() - 3) {
                         actions.clearQueue();
                         actions.addRightTurn();
@@ -131,7 +101,6 @@ public class Drone extends Aircraft {
                 }
 
                 // Step 4: Pass under the island and map bottom edge with echo. Turn right at left edge of island
-                logger.info("****left edge: {}", map.getLeftEdge());
                 if (isInBottomPass && !isFlyingOverIsland && relativePos.x() < map.getLeftEdge() + 2) {
                     actions.clearQueue();
                     actions.addRightTurn();
@@ -257,7 +226,6 @@ public class Drone extends Aircraft {
 
                 // Step 3: If the drone has passed the left edge of the island or is on left edge and about to leave bounds, end
                 if (relativePos.x() < map.getLeftEdge()) {
-                    logger.info("The closest creek ID is: {}", map.getClosestCreek());
                     actions.queueStop();
                     return;
                 } else {
